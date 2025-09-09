@@ -2,6 +2,7 @@ package org.example;
 
 import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.EventSource;
+import okhttp3.Headers;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
@@ -34,6 +35,13 @@ public class WikimediaChangesProducer {
         EventHandler eventHandler = new WikimediaChangeHandler(producer, topic);
         String url = "https://stream.wikimedia.org/v2/stream/recentchange";
         EventSource.Builder builder = new EventSource.Builder(eventHandler, URI.create(url));
+
+        // Wikimedia requires a descriptive User-Agent with contact info; otherwise it returns 403
+        Headers headers = new Headers.Builder()
+                .add("User-Agent", "kafka-wikimedia-demo/1.0 (georgi@example.com)")
+                .build();
+        builder.headers(headers);
+
         EventSource eventSource = builder.build();
 
         // start the producer in another thread
